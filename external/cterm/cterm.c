@@ -11,14 +11,22 @@
 
 void clearScreen() {
     printf("\033[2J");
+    fflush(stdout);
 }
 
 void moveCursor(int x, int y) {
-    printf("\033[%d;%dH", x, y);
+    printf("\033[%d;%dH", y, x);
+    fflush(stdout);
 }
 
 void putStr(const char * str) {
     printf(str);
+    fflush(stdout);
+}
+
+void putCh(unsigned char c) {
+    printf("%c", c);
+    fflush(stdout);
 }
 
 void putStrExt(const char * str, CT_Color print_col, CT_Color bg_col) {
@@ -26,11 +34,13 @@ void putStrExt(const char * str, CT_Color print_col, CT_Color bg_col) {
     setBgColor(bg_col);
     printf(str);
     resetCTColor();
+    fflush(stdout);
 }
 
 void putStrAt(const char * str, int x, int y) {
     moveCursor(x, y);
     printf(str);
+    fflush(stdout);
 }
 
 void putStrAtExt(const char * str, int x, int y, CT_Color print_col, CT_Color bg_col) {
@@ -39,6 +49,7 @@ void putStrAtExt(const char * str, int x, int y, CT_Color print_col, CT_Color bg
     moveCursor(x, y);
     printf(str);
     resetCTColor();
+    fflush(stdout);
 }
 
 int getTermWidth(void) {
@@ -94,6 +105,7 @@ void setPrintColor(CT_Color color) {
         case CT_LWhite:   printf("\033[97m"); break;
         default:          printf("\033[39m"); break;
     }
+    fflush(stdout);
 }
 
 void setBgColor(CT_Color color) {
@@ -117,6 +129,7 @@ void setBgColor(CT_Color color) {
         case CT_LWhite:   printf("\033[107m"); break;
         default:          printf("\033[49m");  break;
     }
+    fflush(stdout);
 }
 
 void resetCTColor(void) {

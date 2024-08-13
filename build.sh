@@ -1,9 +1,12 @@
 
 project="qwe"
-includes="-Iexternal/cterm/"
-cflags="-Wextra -Wall -pedantic -g"
 
 cterm_path="external/cterm"
+cstring_path="external/cstring"
+
+includes="-I./ -I${cterm_path} -I${cstring_path}"
+cflags="-Wextra -Wall -pedantic -g -O3"
+
 
 execute() {
     inp=$(echo -e "$1" | sed 's/\\\n//g')
@@ -32,7 +35,7 @@ yellow_echo() {
     yellow_echo "$project"
 ######### Add Source Files #########
     execute "gcc -o $project $cflags $includes \
-        main.c ${cterm_path}/cterm.c \
+        main.c qwe.c ${cterm_path}/cterm.c ${cstring_path}/cstring.c \
         "
 ###################################
     error_code=$?

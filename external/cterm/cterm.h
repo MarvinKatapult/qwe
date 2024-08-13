@@ -61,6 +61,7 @@ void getTermSize(int * w, int * h);
 
 /** Printing **/
 void putStr(const char * str);
+void putCh(unsigned char c);
 void putStrExt(const char * str, CT_Color print_col, CT_Color bg_col);
 void putStrAt(const char * str, int x, int y);
 void putStrAtExt(const char * str, int x, int y, CT_Color print_col, CT_Color bg_col);
