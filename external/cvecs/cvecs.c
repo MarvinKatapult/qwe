@@ -21,7 +21,7 @@ static bool setVecCapacity(void ** start, size_t cap, size_t size) {
 }
 
 static char * copyCString(const char * str) {
-    char * ret = malloc(sizeof(char) * strlen(str));
+    char * ret = malloc(sizeof(char) * strlen(str) + 1);
     if (ret) {
         strcpy(ret, str);
     }
