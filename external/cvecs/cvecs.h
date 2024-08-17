@@ -60,6 +60,7 @@ bool deleteVecRange(Vec * vec, size_t start, size_t end ); // Removes range(star
 /** END OF VEC **/
 
 /** BEGIN OF STRVEC **/
+#ifndef __USE_CSTRING__ // There is another Library from me called CString https://github.com/MarvinKatapult/cstring
 typedef struct StrVec {
     size_t count;
     size_t capacity;
@@ -73,6 +74,28 @@ void freeStrVec(StrVec str_vec);        // Frees Memory of StrVec
 bool appendStrVec(StrVec * str_vec, const char * str);           // Appends to StrVec
 bool updateStrVec(StrVec str_vec, const char * str, size_t pos); // Updates Value at position
 bool setStrVecCapacity(StrVec * str_vec, size_t cap);            // Sets Capacity and reallocs
+/** END OF STRVEC **/
+
+#else
+
+/** BEGIN OF STRVEC WITH CSTRING **/
+
+#include <cstring.h>
+typedef struct StrVec {
+    size_t count;
+    size_t capacity;
+    String * vals;
+} StrVec;
+StrVec createStrVec(void);              // Creates a StrVec with capacity (Normally put DEFAULT_CAP_VEC)
+StrVec createStrVecEx(size_t capacity); // Creates a StrVec with capacity (Normally put DEFAULT_CAP_VEC)
+void freeStrVec(StrVec str_vec);        // Frees Memory of StrVec
+
+bool appendStrVec(StrVec * str_vec, const char * str);           // Appends to StrVec
+bool updateStrVec(StrVec str_vec, const char * str, size_t pos); // Updates Value at position
+bool setStrVecCapacity(StrVec * str_vec, size_t cap);            // Sets Capacity and reallocs
+
+#endif // __USE_CSTRING__
+
 /** END OF STRVEC **/
 
 /** BEGIN OF INTVEC **/
@@ -90,8 +113,13 @@ bool appendIntVec(IntVec * int_vec, long val);        // Appends to IntVec
 bool setIntVecCapacity(IntVec * int_vec, size_t cap); // Sets Capacity and reallocs
 /** END OF INTVEC **/
 
+#ifndef __USE_CSTRING__
 #define PRINT_STR_VEC(STR_VEC)    for (size_t i = 0; i < STR_VEC.count; i++) printf("%s\n", STR_VEC.vals[i])
 #define PRINT_STR_VEC2(STR_VEC)   for (size_t i = 0; i < STR_VEC.count; i++) printf("%s;", STR_VEC.vals[i]); printf("\n")
+#else
+#define PRINT_STR_VEC(STR_VEC)    for (size_t i = 0; i < STR_VEC.count; i++) printf("%s\n", STR_VEC.vals[i].s)
+#define PRINT_STR_VEC2(STR_VEC)   for (size_t i = 0; i < STR_VEC.count; i++) printf("%s;", STR_VEC.vals[i].s); printf("\n")
+#endif // __USE_CSTRING__
 
 #define PRINT_INT_VEC(INT_VEC)    for (size_t i = 0; i < INT_VEC.count; i++) printf("%ld\n", INT_VEC.vals[i])
 #define PRINT_INT_VEC2(INT_VEC)   for (size_t i = 0; i < INT_VEC.count; i++) printf("%ld;", INT_VEC.vals[i]); printf("\n")

@@ -55,6 +55,7 @@ void setString(String * dest, const char * src);
 void appendString(String * dest, const char * src);
 // Returns true, if action was completed
 bool insertString(String * dest, const char * src, size_t index);
+bool insertStringC(String * dest, char c, size_t index);
 bool removeString(String * dest, const char * src, bool only_first);
 bool removeStringExt(String * dest, size_t start, size_t len);
 bool removeSymbols(String * dest, const char * symbols);

@@ -6,7 +6,7 @@ cstring_path="external/cstring"
 cvecs_path="external/cvecs"
 
 includes="-I./ -I${cterm_path} -I${cstring_path} -I${cvecs_path}"
-cflags="-Wextra -Wall -pedantic -g -O3"
+cflags="-Wextra -Wall -pedantic -g -O3 -D__USE_CSTRING__"
 
 execute() {
     inp=$(echo -e "$1" | sed 's/\\\n//g')

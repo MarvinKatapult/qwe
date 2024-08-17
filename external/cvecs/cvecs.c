@@ -29,6 +29,7 @@ static char * copyCString(const char * str) {
     return ret;
 }
 
+#ifndef __USE_CSTRING__
 StrVec createStrVec() {
     char ** vals = calloc(DEFAULT_CAP_VEC, sizeof(char *));
 
@@ -84,6 +85,61 @@ bool setStrVecCapacity(StrVec * str_vec, size_t cap) {
 
     return true;
 }
+#else
+StrVec createStrVec() {
+    String * vals = calloc(DEFAULT_CAP_VEC, sizeof(String));
+
+    return (StrVec) {
+        .count = 0,
+        .capacity = DEFAULT_CAP_VEC,
+        .vals = vals
+    };
+}
+
+StrVec createStrVecEx(size_t capacity) {
+    String * vals = calloc(capacity, sizeof(String));
+
+    return (StrVec) {
+        .count = 0,
+        .capacity = capacity,
+        .vals = vals
+    };
+}
+
+void freeStrVec(StrVec str_vec) {
+    for (size_t i = 0; i < str_vec.count; i++) {
+        freeString(str_vec.vals[i]);
+    }
+    free(str_vec.vals);
+}
+
+bool appendStrVec(StrVec * str_vec, const char * str) {
+    if (!str_vec) return false;
+
+    str_vec->count++;
+    if (str_vec->capacity < str_vec->count) {
+        setStrVecCapacity(str_vec, calcNewVecCap(str_vec->capacity));
+    }
+
+    str_vec->vals[str_vec->count-1] = createStringExt(str);
+    return true;
+}
+
+bool updateStrVec(StrVec str_vec, const char * str, size_t pos) {
+    if (pos >= str_vec.count) return false;
+    setString(str_vec.vals + pos, str);
+    return true;
+}
+
+bool setStrVecCapacity(StrVec * str_vec, size_t cap) {
+    if (!str_vec) return false;
+    
+    setVecCapacity((void **)&str_vec->vals, cap, sizeof(String));
+    str_vec->capacity = cap;
+
+    return true;
+}
+#endif // __USE_CSTRING__
 
 IntVec createIntVec() {
     long * vals = calloc(DEFAULT_CAP_VEC, sizeof(long));
