@@ -91,6 +91,7 @@ StrVec createStrVecEx(size_t capacity); // Creates a StrVec with capacity (Norma
 void freeStrVec(StrVec str_vec);        // Frees Memory of StrVec
 
 bool appendStrVec(StrVec * str_vec, const char * str);           // Appends to StrVec
+bool insertStrVec(StrVec * str_vec, const char * str, size_t index);
 bool updateStrVec(StrVec str_vec, const char * str, size_t pos); // Updates Value at position
 bool setStrVecCapacity(StrVec * str_vec, size_t cap);            // Sets Capacity and reallocs
 

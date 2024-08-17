@@ -125,6 +125,25 @@ bool appendStrVec(StrVec * str_vec, const char * str) {
     return true;
 }
 
+bool insertStrVec(StrVec * str_vec, const char * str, size_t index) {
+    if (!str_vec || index > str_vec->count) return false;
+
+    if (index - 1 == str_vec->count) return appendStrVec(str_vec, str);
+
+    str_vec->count++;
+    if (str_vec->capacity < str_vec->count) {
+        setStrVecCapacity(str_vec, calcNewVecCap(str_vec->capacity));
+    }
+
+    String * to_move = &str_vec->vals[index];
+    const size_t num_to_move = str_vec->vals + str_vec->count - 1 - to_move;
+    printf("ToMove:%ld\n", num_to_move);
+    memmove(to_move + 1, to_move, sizeof(String) * num_to_move);
+    str_vec->vals[index] = createStringExt(str);
+
+    return true;
+}
+
 bool updateStrVec(StrVec str_vec, const char * str, size_t pos) {
     if (pos >= str_vec.count) return false;
     setString(str_vec.vals + pos, str);
