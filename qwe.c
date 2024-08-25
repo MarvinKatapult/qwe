@@ -31,6 +31,7 @@ static EditorCursor qwe_editor_cursor;
 static StrVec qwe_editor_buf;
 static String qwe_cmd_buf;
 static String qwe_file_name;
+static size_t qwe_buf_start;
 
 void qweMoveCursor(int x, int y);
 
@@ -69,11 +70,13 @@ void qweEventLoop() {
 
         clearScreen();
 
-        for (int i = 0; i < getTermHeight(); i++) {
+        for (int i = qwe_buf_start; i < qwe_buf_start + getTermHeight() - 1; i++) {
             String line_nr = intToString(i + 1);
             if ((size_t)i >= qwe_editor_buf.count) setString(&line_nr, "~");
-            putStrAt(line_nr.s, 0, i + 1); 
-            putStrAt(qwe_editor_buf.vals[i].s, X_COORD_BUFFER_START, i + 1);
+
+            const size_t text_y = i + 1 - qwe_buf_start;
+            putStrAt(line_nr.s, 0, text_y); 
+            putStrAt(qwe_editor_buf.vals[i].s, X_COORD_BUFFER_START, text_y);
             freeString(line_nr);
         }
         switch (qwe_editor_state) {
@@ -125,21 +128,33 @@ void qweEventLoop() {
             }
 
             switch (c) {
+                // Moving Left
                 case 'h':
                 case 'D':
                     if (qwe_editor_cursor.x <= X_COORD_BUFFER_START) break;
                     qweMoveCursor(qwe_editor_cursor.x - 1, qwe_editor_cursor.y);
                     break;
+                // Moving Down 
                 case 'j':
                 case 'B':
-                    if (qwe_editor_cursor.y >= getTermHeight() - 1) break;
+                    if (qwe_editor_cursor.y + qwe_buf_start > qwe_editor_buf.count - 1) break;
+                    if (qwe_editor_cursor.y == getTermHeight() - 1) {
+                        qwe_buf_start++;
+                        break;
+                    }
                     qweMoveCursor(qwe_editor_cursor.x, qwe_editor_cursor.y + 1);
                     break;
+                // Moving Up
                 case 'k':
                 case 'A':
-                    if (qwe_editor_cursor.y - 1 < 1) break;
+                    if (qwe_editor_cursor.y - 1 < 1 && qwe_buf_start == 0) break;
+                    if (qwe_editor_cursor.y == 1) {
+                        qwe_buf_start--;
+                        break;
+                    }
                     qweMoveCursor(qwe_editor_cursor.x, qwe_editor_cursor.y - 1);
                     break;
+                // Moving Right
                 case 'l':
                 case 'C':
                     if (qwe_editor_cursor.x >= current_str->s + X_COORD_BUFFER_START - 1) break;
@@ -155,21 +170,25 @@ void qweEventLoop() {
             if (isCtrlChar(c)) {
                 if (c == ENTER) {
                     insertStrVec(&qwe_editor_buf, current_str->s + (qwe_editor_cursor.x - X_COORD_BUFFER_START), qwe_editor_cursor.y);
-                    int index_of_br = qwe_editor_cursor.x - X_COORD_BUFFER_START;
+
+                    const int index_of_br = qwe_editor_cursor.x - X_COORD_BUFFER_START;
                     removeStringExt(current_str, index_of_br, strlen(current_str->s + index_of_br));
-                    qweMoveCursor(X_COORD_BUFFER_START, qwe_editor_cursor.y + 1);
+
+                    bool appended_last_line = qwe_editor_cursor.y == getTermHeight() - 1;
+                    if (appended_last_line) qwe_buf_start++;
+                    else                    qweMoveCursor(X_COORD_BUFFER_START, qwe_editor_cursor.y + 1);
                     continue;
                 }
                 if (c == BACKSPACE) {
                     if(qwe_editor_cursor.x > X_COORD_BUFFER_START) {
                         removeStringExt(current_str, qwe_editor_cursor.x - X_COORD_BUFFER_START - 1, 1);
                         qweMoveCursor(qwe_editor_cursor.x - 1, qwe_editor_cursor.y);
-                    }
+                    } 
                     continue;
                 }
             }
             // Default Input
-            insertStringC(current_str, c, qwe_editor_cursor.x - X_COORD_BUFFER_START);
+            insertStringC(current_str, c, qwe_editor_cursor.x - X_COORD_BUFFER_START + qwe_buf_start);
             qweMoveCursor(qwe_editor_cursor.x + 1, qwe_editor_cursor.y);
         } else if (qwe_editor_state == CommandMode) {
             if (c == ENTER) {
