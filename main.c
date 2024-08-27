@@ -1,7 +1,7 @@
 #include <qwe.h>
 
-int main() {
-    qweStart();
+int main(int argc, char * argv[]) {
+    qweStart(argc, argv);
 
     return 0;
 }

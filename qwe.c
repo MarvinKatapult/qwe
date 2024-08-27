@@ -13,8 +13,6 @@
 #define BACKSPACE   127
 #define ENTER       '\r'
 
-#define X_COORD_BUFFER_START    4
-
 typedef enum {
     NormalMode = 0,
     InsertMode,
@@ -31,20 +29,34 @@ static EditorCursor qwe_editor_cursor;
 static StrVec qwe_editor_buf;
 static String qwe_cmd_buf;
 static String qwe_file_name;
-static size_t qwe_buf_start;
+static size_t qwe_buf_start_y;
+static size_t qwe_buf_start_x;
 
 void qweMoveCursor(int x, int y);
+void qweEnd(void);
+void qweMoveCursor(int x, int y);
+void qweEventLoop(void);
+int qweProcessCmd(const char * str);
+void qweSaveBuffer(void);
+void qweParseFile(const char * file);
 
-void qweStart() {
+void qweStart(int argc, char * argv[]) {
     enableRawMode();
     qwe_editor_state = NormalMode;
     qwe_editor_cursor = (EditorCursor){ 1, 1 };
     qwe_editor_buf = createStrVec();
     qwe_cmd_buf = createString();
-    qwe_file_name = createStringExt("a.out");
+    qwe_buf_start_x = 4;
     appendStrVec(&qwe_editor_buf, "");
     clearScreen();
-    qweMoveCursor(X_COORD_BUFFER_START, 1);
+    qweMoveCursor(qwe_buf_start_x, 1);
+
+    if (argc > 1) {
+        qwe_file_name = createStringExt(argv[1]);
+        qweParseFile(argv[1]);
+    } else {
+        qwe_file_name = createStringExt("a.out");
+    }
 
     qweEventLoop();
     qweEnd();
@@ -70,13 +82,13 @@ void qweEventLoop() {
 
         clearScreen();
 
-        for (int i = qwe_buf_start; i < qwe_buf_start + getTermHeight() - 1; i++) {
+        for (int i = qwe_buf_start_y; i < qwe_buf_start_y + getTermHeight() - 1; i++) {
             String line_nr = intToString(i + 1);
             if ((size_t)i >= qwe_editor_buf.count) setString(&line_nr, "~");
 
-            const size_t text_y = i + 1 - qwe_buf_start;
+            const size_t text_y = i + 1 - qwe_buf_start_y;
             putStrAt(line_nr.s, 0, text_y); 
-            putStrAt(qwe_editor_buf.vals[i].s, X_COORD_BUFFER_START, text_y);
+            putStrAt(qwe_editor_buf.vals[i].s, qwe_buf_start_x, text_y);
             freeString(line_nr);
         }
         switch (qwe_editor_state) {
@@ -119,11 +131,11 @@ void qweEventLoop() {
                 continue;
             }
             if (c == '$') {
-                qwe_editor_cursor.x = strlen(current_str->s) + X_COORD_BUFFER_START - 1;
+                qwe_editor_cursor.x = strlen(current_str->s) + qwe_buf_start_x - 1;
                 continue;
             }
             if (c == '0') {
-                qwe_editor_cursor.x = X_COORD_BUFFER_START;
+                qwe_editor_cursor.x = qwe_buf_start_x;
                 continue;
             }
 
@@ -131,15 +143,15 @@ void qweEventLoop() {
                 // Moving Left
                 case 'h':
                 case 'D':
-                    if (qwe_editor_cursor.x <= X_COORD_BUFFER_START) break;
+                    if (qwe_editor_cursor.x <= qwe_buf_start_x) break;
                     qweMoveCursor(qwe_editor_cursor.x - 1, qwe_editor_cursor.y);
                     break;
                 // Moving Down 
                 case 'j':
                 case 'B':
-                    if (qwe_editor_cursor.y + qwe_buf_start > qwe_editor_buf.count - 1) break;
+                    if (qwe_editor_cursor.y + qwe_buf_start_y > qwe_editor_buf.count - 1) break;
                     if (qwe_editor_cursor.y == getTermHeight() - 1) {
-                        qwe_buf_start++;
+                        qwe_buf_start_y++;
                         break;
                     }
                     qweMoveCursor(qwe_editor_cursor.x, qwe_editor_cursor.y + 1);
@@ -147,9 +159,9 @@ void qweEventLoop() {
                 // Moving Up
                 case 'k':
                 case 'A':
-                    if (qwe_editor_cursor.y - 1 < 1 && qwe_buf_start == 0) break;
+                    if (qwe_editor_cursor.y - 1 < 1 && qwe_buf_start_y == 0) break;
                     if (qwe_editor_cursor.y == 1) {
-                        qwe_buf_start--;
+                        qwe_buf_start_y--;
                         break;
                     }
                     qweMoveCursor(qwe_editor_cursor.x, qwe_editor_cursor.y - 1);
@@ -157,38 +169,38 @@ void qweEventLoop() {
                 // Moving Right
                 case 'l':
                 case 'C':
-                    if (qwe_editor_cursor.x >= current_str->s + X_COORD_BUFFER_START - 1) break;
+                    if (qwe_editor_cursor.x >= current_str->s + qwe_buf_start_x - 1) break;
                     qweMoveCursor(qwe_editor_cursor.x + 1, qwe_editor_cursor.y);
                     break;
                 case 'o':
                     insertStrVec(&qwe_editor_buf, "", qwe_editor_cursor.y);
-                    qweMoveCursor(X_COORD_BUFFER_START, qwe_editor_cursor.y + 1);
+                    qweMoveCursor(qwe_buf_start_x, qwe_editor_cursor.y + 1);
                     qwe_editor_state = InsertMode;
                     break;
             }
         } else if (qwe_editor_state == InsertMode) {
             if (isCtrlChar(c)) {
                 if (c == ENTER) {
-                    insertStrVec(&qwe_editor_buf, current_str->s + (qwe_editor_cursor.x - X_COORD_BUFFER_START), qwe_editor_cursor.y);
+                    insertStrVec(&qwe_editor_buf, current_str->s + (qwe_editor_cursor.x - qwe_buf_start_x), qwe_editor_cursor.y);
 
-                    const int index_of_br = qwe_editor_cursor.x - X_COORD_BUFFER_START;
+                    const int index_of_br = qwe_editor_cursor.x - qwe_buf_start_x;
                     removeStringExt(current_str, index_of_br, strlen(current_str->s + index_of_br));
 
                     bool appended_last_line = qwe_editor_cursor.y == getTermHeight() - 1;
-                    if (appended_last_line) qwe_buf_start++;
-                    else                    qweMoveCursor(X_COORD_BUFFER_START, qwe_editor_cursor.y + 1);
+                    if (appended_last_line) qwe_buf_start_y++;
+                    else                    qweMoveCursor(qwe_buf_start_x, qwe_editor_cursor.y + 1);
                     continue;
                 }
                 if (c == BACKSPACE) {
-                    if(qwe_editor_cursor.x > X_COORD_BUFFER_START) {
-                        removeStringExt(current_str, qwe_editor_cursor.x - X_COORD_BUFFER_START - 1, 1);
+                    if(qwe_editor_cursor.x > qwe_buf_start_x) {
+                        removeStringExt(current_str, qwe_editor_cursor.x - qwe_buf_start_x - 1, 1);
                         qweMoveCursor(qwe_editor_cursor.x - 1, qwe_editor_cursor.y);
                     } 
                     continue;
                 }
             }
             // Default Input
-            insertStringC(current_str, c, qwe_editor_cursor.x - X_COORD_BUFFER_START + qwe_buf_start);
+            insertStringC(current_str, c, qwe_editor_cursor.x - qwe_buf_start_x + qwe_buf_start_y);
             qweMoveCursor(qwe_editor_cursor.x + 1, qwe_editor_cursor.y);
         } else if (qwe_editor_state == CommandMode) {
             if (c == ENTER) {
@@ -207,7 +219,9 @@ void qweEventLoop() {
 }
 
 int qweProcessCmd(const char * str) {
-    for (int i = 0; i < strlen(str); i++) {
+
+    const int len = strlen(str);
+    for (int i = 0; i < len; i++) {
         switch (str[i]) {
             case 'w':
                 qweSaveBuffer();
@@ -216,6 +230,7 @@ int qweProcessCmd(const char * str) {
                 return false;
         }
     }
+
     setString(&qwe_cmd_buf, "");
     return true;
 }
@@ -231,4 +246,20 @@ void qweSaveBuffer() {
         fprintf(fp, "\n");
     }
     fclose(fp);
+}
+
+void qweParseFile(const char * file) {
+    FILE * fp = fopen(file, "r");
+    char c;
+    int count = 0;
+    while ((c = fgetc(fp)) != EOF) {
+        if (c == '\n') {
+            appendStrVec(&qwe_editor_buf, "");
+            count++;
+            continue;
+        }
+        
+        String * str = &qwe_editor_buf.vals[count];
+        insertStringC(str, c, strlen(str->s));
+    }
 }

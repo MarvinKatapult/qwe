@@ -1,10 +1,6 @@
 #ifndef __QWE_H__
 #define __QWE_H__
 
-void qweStart(void);
-void qweEnd(void);
-void qweEventLoop(void);
-int qweProcessCmd(const char * cmd);
-void qweSaveBuffer(void);
+void qweStart(int argc, char * argv[]);
 
 #endif // __QWE_H__
